@@ -43,7 +43,7 @@ def setup_args():
     parser.add_argument('-p', '--password', metavar='<password>', type=str, help='Elastic user password. Eg: p@SSw0Rd!@#')
     parser.add_argument('-m', '--max_time_threshold', metavar='<max_time_threshold>', type=str, default='60', help='Max time threshold of the rule, in minutes, which a successful rule execution time must not exceed to be considered as a working rule. Eg: 5, 10, 15, 20')
     parser.add_argument('-s', '--slack_token', metavar='<slack_token>', type=str, default='', help='Slack token...')
-    parser.add_argument('-v', '--verbosity', metavar='<verbosity_level>', type=str, default='DEBUG', help='Execution verbosity level. Eg: SUCCESS|WARN|INFO|DEBUG.')
+    parser.add_argument('-v', '--verbosity', metavar='<verbosity_level>', type=str, default='DEBUG', help='Execution verbosity level. Eg: SUCCESS|warning|INFO|DEBUG.')
     logger.info('Arguments parsed successfully...')
     return parser.parse_args()
 
@@ -70,9 +70,11 @@ def send_to_slack(failing_rules, slack_token):
     logger.info("Printing blocks:")
     pprint(blocks)
     try:
-        response = webhook.send(text='Failing Rules...', blocks=blocks)
-        logger.info(response.status_code)
-        logger.info('Message successfully posted in Slack...')
+        if len(failing_rules) > 0:    
+            response = webhook.send(text='Failing Rules...', blocks=blocks)
+            logger.info(response.status_code)
+            logger.info('Message successfully posted in Slack...')
+        else: logger.info('No blocks created since no failing rules were found. Skipping Slack message sending...')
     except Exception as e:
         logger.error('Exception {} occurred in {}...'.format(e, send_to_slack))
         logger.error(response.status_code)
@@ -84,18 +86,21 @@ def main():
     failing_rules = get_failing_rules(args.elastic_host, args.user, args.password, args.max_time_threshold)
     if args.slack_token != '':
         send_to_slack(failing_rules, args.slack_token)
-    sys.exit(set_exit_status(failing_rules))
+    set_exit_status(failing_rules)
+    sys.exit(exit_status_value)
     
 
 def get_failing_rules(host, user, password, max_time_threshold):
     detection_engine = host + '/api/detection_engine/rules/_find?per_page=600&filter=alert.attributes.enabled:true'
     response = requests.get(detection_engine, auth=(user, password)).json()
+    # logger.info('Printing Response:...')
+    # pprint(response)
     rule_list = []
     num = 0
     for item in response['data']:
         if time_diff_threshold_breached(item.get('last_success_at'), max_time_threshold):
             rule_dict = {'Name': item.get('name'), 'Rule ID': item.get('rule_id'), 'Last Success Time (UTC)': item.get('last_success_at'), 'Last Failure Time (UTC)': item.get('last_failure_at'), 'Failure Message': item.get('last_failure_message')}
-            logger.warn('rule {} ({}) breached threshold.'.format(item.get('name'), item.get('rule_id')))
+            logger.warning('rule {} ({}) breached threshold.'.format(item.get('name'), item.get('rule_id')))
             rule_list.append(rule_dict)
     logger.info('Printing failing rules list:')
     pprint(rule_list)
@@ -119,7 +124,7 @@ def time_diff_threshold_breached(last_success_time, max_time_threshold):
 def set_exit_status(failing_rules):
     global exit_status_value
     if len(failing_rules) > 0: 
-        logger.warn('Exitting with non-zero status code because some rules are failing...')
+        logger.warning('Exitting with non-zero status code because some rules are failing...')
         exit_status_value = 1 
 
 
