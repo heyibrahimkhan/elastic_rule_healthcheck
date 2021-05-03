@@ -91,17 +91,22 @@ def main():
     
 
 def get_failing_rules(host, user, password, max_time_threshold):
-    detection_engine = host + '/api/detection_engine/rules/_find?per_page=600&filter=alert.attributes.enabled:true'
-    response = requests.get(detection_engine, auth=(user, password)).json()
-    # logger.info('Printing Response:...')
-    # pprint(response)
+    page_num = 1
     rule_list = []
-    num = 0
-    for item in response['data']:
-        if time_diff_threshold_breached(item.get('last_success_at'), max_time_threshold):
-            rule_dict = {'Name': item.get('name'), 'Rule ID': item.get('rule_id'), 'Last Success Time (UTC)': item.get('last_success_at'), 'Last Failure Time (UTC)': item.get('last_failure_at'), 'Failure Message': item.get('last_failure_message')}
-            logger.warning('rule {} ({}) breached threshold.'.format(item.get('name'), item.get('rule_id')))
-            rule_list.append(rule_dict)
+    while(True):
+        detection_engine = host + '/api/detection_engine/rules/_find?per_page=600&filter=alert.attributes.enabled:true&page={}'.format(page_num)
+        response = requests.get(detection_engine, auth=(user, password)).json()
+        # logger.info('Printing Response:...')
+        # pprint(response)
+        for item in response['data']:
+            if time_diff_threshold_breached(item.get('last_success_at'), max_time_threshold):
+                rule_dict = {'Name': item.get('name'), 'Rule ID': item.get('rule_id'), 'Last Success Time (UTC)': item.get('last_success_at'), 'Last Failure Time (UTC)': item.get('last_failure_at'), 'Failure Message': item.get('last_failure_message')}
+                logger.warning('rule {} ({}) breached threshold.'.format(item.get('name'), item.get('rule_id')))
+                rule_list.append(rule_dict)
+        
+        # when last page or ids greater than the ones on last page
+        if page_num * response.get('perPage') >= response.get('total'): break
+        else: page_num += 1
     logger.info('Printing failing rules list:')
     pprint(rule_list)
     return rule_list
