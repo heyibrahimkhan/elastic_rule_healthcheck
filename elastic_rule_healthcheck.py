@@ -69,7 +69,7 @@ def send_to_slack(failing_rules, slack_token):
     blocks = []
     for rule in failing_rules:
         # pprint(convert_to_slack_block(rule))
-        blocks.append({"type": "divider"})
+        # blocks.append({"type": "divider"})
         blocks.append(convert_to_slack_block(rule))
     logger.info("Printing blocks:")
     pprint(blocks)
