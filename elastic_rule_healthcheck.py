@@ -96,8 +96,10 @@ def get_failing_rules(host, user, password, max_time_threshold):
     while(True):
         detection_engine = host + '/api/detection_engine/rules/_find?per_page=600&filter=alert.attributes.enabled:true&page={}'.format(page_num)
         response = requests.get(detection_engine, auth=(user, password)).json()
-        # logger.info('Printing Response:...')
-        # pprint(response)
+        logger.info('Printing Response:...')
+        pprint(response)
+        logger.info('Printed Response...')
+        logger.info('===================')
         for item in response['data']:
             if time_diff_threshold_breached(item.get('last_success_at'), max_time_threshold):
                 rule_dict = {'Name': item.get('name'), 'Rule ID': item.get('rule_id'), 'Last Success Time (UTC)': item.get('last_success_at'), 'Last Failure Time (UTC)': item.get('last_failure_at'), 'Failure Message': item.get('last_failure_message')}
