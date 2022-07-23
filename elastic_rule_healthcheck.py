@@ -101,7 +101,7 @@ def get_failing_rules(host, user, password, max_time_threshold):
         logger.info('Printed Response...')
         logger.info('===================')
         for item in response['data']:
-            if time_diff_threshold_breached(item.get('last_success_at'), max_time_threshold):
+            if time_diff_threshold_breached(item.get('execution_summary').get('last_execution'), max_time_threshold):
                 rule_dict = {'Name': item.get('name'), 'Rule ID': item.get('rule_id'), 'Last Success Time (UTC)': item.get('last_success_at'), 'Last Failure Time (UTC)': item.get('last_failure_at'), 'Failure Message': item.get('last_failure_message')}
                 logger.warning('rule {} ({}) breached threshold.'.format(item.get('name'), item.get('rule_id')))
                 rule_list.append(rule_dict)
@@ -114,9 +114,13 @@ def get_failing_rules(host, user, password, max_time_threshold):
     return rule_list
 
 
-def time_diff_threshold_breached(last_success_time, max_time_threshold):
+def time_diff_threshold_breached(last_execution_summary, max_time_threshold):
     ret = False
     time_format = '%Y-%m-%dT%H:%M:%S.%fZ'
+    last_success_time = '1900-01-01T00:00:00.000Z' # very old time so all time diff checks fail, if any
+    # only set last success time from the item received, if last status was successful
+    if last_execution_summary.get('status') == 'succeeded' and last_execution_summary.get('message') == 'succeeded':
+        last_success_time = last_execution_summary.get('date')
     try:
         # if rule last execution time is farther back in time than now-MaxThresholdTime
         if datetime.strptime(last_success_time, time_format) < datetime.utcnow() -  timedelta(minutes=int(max_time_threshold)):
