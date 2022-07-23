@@ -97,7 +97,7 @@ def get_failing_rules(host, user, password, max_time_threshold):
         detection_engine = host + '/api/detection_engine/rules/_find?per_page=600&filter=alert.attributes.enabled:true&page={}'.format(page_num)
         response = requests.get(detection_engine, auth=(user, password)).json()
         logger.info('Printing Response:...')
-        pprint(response)
+        pprint(response['data'][0])
         logger.info('Printed Response...')
         logger.info('===================')
         for item in response['data']:
