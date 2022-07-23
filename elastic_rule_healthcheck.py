@@ -73,7 +73,10 @@ def send_to_slack(failing_rules, slack_token):
         if len(failing_rules) > 0:    
             response = webhook.send(text='Failing Rules...', blocks=blocks)
             logger.info(response.status_code)
-            logger.info('Message successfully posted in Slack...')
+            if response.status_code >= 200 and response.status_code < 300:
+                logger.info('Message successfully posted in Slack...')
+            else:
+                logger.error('Message not posted in Slack due to status code {}...'.format(response.status_code))
         else: logger.info('No blocks created since no failing rules were found. Skipping Slack message sending...')
     except Exception as e:
         logger.error('Exception {} occurred in {}...'.format(e, send_to_slack))
@@ -135,7 +138,7 @@ def time_diff_threshold_breached(last_execution_summary, max_time_threshold):
 def set_exit_status(failing_rules):
     global exit_status_value
     if len(failing_rules) > 0: 
-        logger.warning('Exitting with non-zero status code because some rules are failing...')
+        logger.warning('Exiting with non-zero status code because some rules are failing...')
         exit_status_value = 1 
 
 
