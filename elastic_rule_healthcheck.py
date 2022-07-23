@@ -70,7 +70,8 @@ def send_to_slack(failing_rules, slack_token):
     for rule in failing_rules:
         # pprint(convert_to_slack_block(rule))
         # blocks.append({"type": "divider"})
-        blocks.append(convert_to_slack_block(rule))
+        # blocks.append(convert_to_slack_block(rule))
+        webhook.send(text='Failing Rules...', blocks=[convert_to_slack_block(rule)])
     logger.info("Printing blocks:")
     pprint(blocks)
     try:
