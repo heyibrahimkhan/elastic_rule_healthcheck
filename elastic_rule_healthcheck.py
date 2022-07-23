@@ -49,7 +49,11 @@ def setup_args():
 
 
 def convert_to_slack_block(rule):
-    text = "*======================*\n`{0}` ({1})\n`Last Success Time (UTC):` {2}\n`Last Failure Time (UTC):` {3}\n*Failure Message:*\n```{4}```".format(rule.get('Name'), rule.get('Rule ID'), rule.get('Last Success Time (UTC)'), rule.get('Last Failure Time (UTC)'), rule.get('Failure Message'))
+    text = "*======================*\n`{0}` ({1})\n`Execution Summary:` {2}\n".format(
+        rule.get('Name'),
+        rule.get('Rule ID'),
+        rule.get('Execution Summary')
+    )
     ret = {
 			"type": "section",
 			"text": {
@@ -105,7 +109,7 @@ def get_failing_rules(host, user, password, max_time_threshold):
         logger.info('===================')
         for item in response['data']:
             if time_diff_threshold_breached(item.get('execution_summary').get('last_execution'), max_time_threshold):
-                rule_dict = {'Name': item.get('name'), 'Rule ID': item.get('rule_id'), 'Last Success Time (UTC)': item.get('last_success_at'), 'Last Failure Time (UTC)': item.get('last_failure_at'), 'Failure Message': item.get('last_failure_message')}
+                rule_dict = {'Name': item.get('name'), 'Rule ID': item.get('rule_id'), 'Execution Summary': item.get('execution_summary')}
                 logger.warning('rule {} ({}) breached threshold.'.format(item.get('name'), item.get('rule_id')))
                 rule_list.append(rule_dict)
         
