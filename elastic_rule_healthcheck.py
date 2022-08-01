@@ -127,7 +127,7 @@ def time_diff_threshold_breached(last_execution_summary, max_time_threshold):
     time_format = '%Y-%m-%dT%H:%M:%S.%fZ'
     last_success_time = '1900-01-01T00:00:00.000Z' # very old time so all time diff checks fail, if any
     # only set last success time from the item received, if last status was successful
-    if last_execution_summary.get('status') == 'succeeded' and last_execution_summary.get('message') == 'succeeded':
+    if last_execution_summary.get('status') in ['succeeded', 'running']:
         last_success_time = last_execution_summary.get('date')
     try:
         # if rule last execution time is farther back in time than now-MaxThresholdTime
